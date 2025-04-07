@@ -65,6 +65,28 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
+class ProfilePage extends StatelessWidget {
+  
+  const ProfilePage({super.key, required this.user});
+  final User user;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Profile'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text('Email: ${user.email}'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class RegisterEmailSection extends StatefulWidget {
   RegisterEmailSection({Key? key, required this.auth}) : super(key: key);
   final FirebaseAuth auth;
@@ -135,6 +157,7 @@ class _RegisterEmailSectionState extends State<RegisterEmailSection> {
                 }
               },
               child: Text('Submit'),
+            
             ),
           ),
           Container(
@@ -170,7 +193,7 @@ class _EmailPasswordFormState extends State<EmailPasswordForm> {
   String _userEmail = '';
   void _signInWithEmailAndPassword() async {
     try {
-      await widget.auth.signInWithEmailAndPassword(
+      final UserCredential userCredential = await widget.auth.signInWithEmailAndPassword(
         email: _emailController.text,
         password: _passwordController.text,
       );
@@ -179,6 +202,12 @@ class _EmailPasswordFormState extends State<EmailPasswordForm> {
         _userEmail = _emailController.text;
         _initialState = false;
       });
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProfilePage(user: userCredential.user!),
+        ),
+      );
     } catch (e) {
       setState(() {
         _success = false;
@@ -229,6 +258,7 @@ class _EmailPasswordFormState extends State<EmailPasswordForm> {
                 }
               },
               child: Text('Submit'),
+
             ),
           ),
           Container(
