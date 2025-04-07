@@ -66,13 +66,30 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key, required this.user});
+  ProfilePage({Key? key, required this.user}) : super(key: key);
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final User user;
+
+  void _signOut(BuildContext context) async {
+    await _auth.signOut();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Signed out successfully')),
+    );
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Profile'),
+        actions: <Widget>[
+          ElevatedButton(
+            onPressed: () => _signOut(context),
+            child: Text('Sign Out'),
+          ),
+        ],
       ),
       body: Center(
         child: Column(
