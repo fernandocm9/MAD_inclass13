@@ -2,9 +2,7 @@ import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
-import 'auth_gate.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,12 +51,14 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            RegisterEmailSection(auth: _auth),
-            EmailPasswordForm(auth: _auth),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              RegisterEmailSection(auth: _auth),
+              EmailPasswordForm(auth: _auth),
+            ],
+          ),
         ),
       ),
     );
@@ -66,7 +66,6 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class ProfilePage extends StatelessWidget {
-  
   const ProfilePage({super.key, required this.user});
   final User user;
   @override
@@ -101,6 +100,7 @@ class _RegisterEmailSectionState extends State<RegisterEmailSection> {
   bool _success = false;
   bool _initialState = true;
   String? _userEmail;
+
   void _register() async {
     try {
       await widget.auth.createUserWithEmailAndPassword(
@@ -133,9 +133,10 @@ class _RegisterEmailSectionState extends State<RegisterEmailSection> {
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter a valid email';
-              } else if(value.length < 5) {
+              } else if (value.length < 5) {
                 return 'Email must be at least 5 characters';
-              } else if(!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
+              } else if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+                  .hasMatch(value)) {
                 return 'Please enter a valid email address';
               }
               return null;
@@ -147,7 +148,7 @@ class _RegisterEmailSectionState extends State<RegisterEmailSection> {
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Password must be at least 6 characters:';
-              } else if(value.length < 6){
+              } else if (value.length < 6) {
                 return 'Password must be at least 6 characters:';
               }
               return null;
@@ -163,7 +164,6 @@ class _RegisterEmailSectionState extends State<RegisterEmailSection> {
                 }
               },
               child: Text('Submit'),
-            
             ),
           ),
           Container(
@@ -172,8 +172,8 @@ class _RegisterEmailSectionState extends State<RegisterEmailSection> {
               _initialState
                   ? 'Please Register'
                   : _success
-                  ? 'Successfully registered $_userEmail'
-                  : 'Registration failed',
+                      ? 'Successfully registered $_userEmail'
+                      : 'Registration failed',
               style: TextStyle(color: _success ? Colors.green : Colors.red),
             ),
           ),
@@ -192,14 +192,20 @@ class EmailPasswordForm extends StatefulWidget {
 
 class _EmailPasswordFormState extends State<EmailPasswordForm> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _resetFormKey = GlobalKey<FormState>();
+
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _emailResetController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
   bool _success = false;
   bool _initialState = true;
   String _userEmail = '';
+
   void _signInWithEmailAndPassword() async {
     try {
-      final UserCredential userCredential = await widget.auth.signInWithEmailAndPassword(
+      final UserCredential userCredential =
+          await widget.auth.signInWithEmailAndPassword(
         email: _emailController.text,
         password: _passwordController.text,
       );
@@ -222,65 +228,115 @@ class _EmailPasswordFormState extends State<EmailPasswordForm> {
     }
   }
 
+  void _resetPassword() async {
+    if (_resetFormKey.currentState!.validate()) {
+      await widget.auth.sendPasswordResetEmail(
+        email: _emailResetController.text,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text('Password reset email sent to ${_emailResetController.text}'),
+        ),
+      );
+      _emailResetController.clear();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            child: Text('Test sign in with email and password'),
-            padding: const EdgeInsets.all(16),
-            alignment: Alignment.center,
+    return Column(
+      children: [
+        Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Container(
+                child: Text('Test sign in with email and password'),
+                padding: const EdgeInsets.all(16),
+                alignment: Alignment.center,
+              ),
+              TextFormField(
+                controller: _emailController,
+                decoration: InputDecoration(labelText: 'Email'),
+                validator: (value) {
+                  if (value?.isEmpty ?? true) {
+                    return 'Please enter some text';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _passwordController,
+                decoration: InputDecoration(labelText: 'Password'),
+                validator: (value) {
+                  if (value?.isEmpty ?? true) {
+                    return 'Please enter some text';
+                  }
+                  return null;
+                },
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                alignment: Alignment.center,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      _signInWithEmailAndPassword();
+                    }
+                  },
+                  child: Text('Submit'),
+                ),
+              ),
+              Container(
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  _initialState
+                      ? 'Please sign in'
+                      : _success
+                          ? 'Successfully signed in $_userEmail'
+                          : 'Sign in failed',
+                  style: TextStyle(color: _success ? Colors.green : Colors.red),
+                ),
+              ),
+            ],
           ),
-          TextFormField(
-            controller: _emailController,
-            decoration: InputDecoration(labelText: 'Email'),
-            validator: (value) {
-              if (value?.isEmpty ?? true) {
-                return 'Please enter some text';
-              }
-              return null;
-            },
+        ),
+        Divider(height: 32),
+        Form(
+          key: _resetFormKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextFormField(
+                controller: _emailResetController,
+                decoration: InputDecoration(labelText: 'Email for Password Reset'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a valid email';
+                  } else if (value.length < 5) {
+                    return 'Email must be at least 5 characters';
+                  } else if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+                      .hasMatch(value)) {
+                    return 'Please enter a valid email address';
+                  }
+                  return null;
+                },
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                alignment: Alignment.center,
+                child: ElevatedButton(
+                  onPressed: _resetPassword,
+                  child: Text('Reset Password'),
+                ),
+              ),
+            ],
           ),
-          TextFormField(
-            controller: _passwordController,
-            decoration: InputDecoration(labelText: 'Password'),
-            validator: (value) {
-              if (value?.isEmpty ?? true) {
-                return 'Please enter some text';
-              }
-              return null;
-            },
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            alignment: Alignment.center,
-            child: ElevatedButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  _signInWithEmailAndPassword();
-                }
-              },
-              child: Text('Submit'),
-
-            ),
-          ),
-          Container(
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              _initialState
-                  ? 'Please sign in'
-                  : _success
-                  ? 'Successfully signed in $_userEmail'
-                  : 'Sign in failed',
-              style: TextStyle(color: _success ? Colors.green : Colors.red),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
