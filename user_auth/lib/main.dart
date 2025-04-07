@@ -109,8 +109,12 @@ class _RegisterEmailSectionState extends State<RegisterEmailSection> {
             controller: _emailController,
             decoration: InputDecoration(labelText: 'Email'),
             validator: (value) {
-              if (value?.isEmpty ?? true) {
-                return 'Please enter some text';
+              if (value == null || value.isEmpty) {
+                return 'Please enter a valid email';
+              } else if(value.length < 5) {
+                return 'Email must be at least 5 characters';
+              } else if(!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
+                return 'Please enter a valid email address';
               }
               return null;
             },
@@ -119,8 +123,10 @@ class _RegisterEmailSectionState extends State<RegisterEmailSection> {
             controller: _passwordController,
             decoration: InputDecoration(labelText: 'Password'),
             validator: (value) {
-              if (value?.isEmpty ?? true) {
-                return 'Please enter some text';
+              if (value == null || value.isEmpty) {
+                return 'Password must be at least 6 characters:';
+              } else if(value.length < 6){
+                return 'Password must be at least 6 characters:';
               }
               return null;
             },
